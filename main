@@ -1,0 +1,82 @@
+# -*- coding:utf-8 -*-
+
+import datetime
+import calendar
+
+class HuiXi(object):
+
+    cycle = 4 # 4个月一个周期
+    fee_per_cycle = 10000 # 每四个月需要给出金额
+    get_pay_accrual = 3000 # 得会后附加利息
+    alipay_dayrate = 0.76 / 9964.40 # 每天的利息
+
+    def __init__(self, index):
+
+        self.date = datetime.datetime(2016,7,1)
+        self.balance = 300000
+        self.index = index
+        self.pay_accrual = 0
+
+    def calculate_balance(self):
+        """ 计算每一天的 余额
+        :param index:
+        :return:
+        """
+        print
+        month_start_at = self.date
+
+        print u'开始 用户：', self.index, month_start_at, u' 余额：', self.balance
+
+        for month in range(1, (19 * self.cycle) + 2):
+            igpa = self.is_got_pay_accrual(month=month)
+            if igpa == 'get':
+                self.balance += self.fee_per_cycle * 19
+
+            elif igpa == 'give':
+                if self.pay_accrual == 0:
+                    self.balance -= self.fee_per_cycle
+                    self.pay_accrual = self.get_pay_accrual
+                else:
+                    self.balance -= self.fee_per_cycle + self.get_pay_accrual
+
+            self.date += datetime.timedelta(days=1)
+            self.add_dayrate(month_start_at=month_start_at)
+            # print month_start_at, igpa, self.balance
+            print u'开始 用户：', self.index, month_start_at, u' 动作：', igpa, u' 余额：', self.balance
+            month_start_at = self.get_next_month(month_start_at)
+
+    def is_got_pay_accrual(self, month):
+        """
+        :return: got: 已经获得，get: 要获得，wait：还未获得
+        """
+
+        print month / 4,  month % 4
+
+        if ( month % 4 == 1 ):
+            return 'give'
+
+        elif ( month / 4 ) ==  (self.index - 1) and ( month % 4 == 1):
+            return 'get'
+        # elif ( month / 4 ) >=  (self.index - 1) and not ( month % 4 == 1 ):
+        #     return 'got'
+        # elif ( ( month / 4 ) >=  (self.index - 1) ) and ( month % 4 == 1 ):
+        #     return 'give'
+        else:
+            return 'wait'
+
+    def get_next_month(self, date_at):
+        """ 获得下个月的时间
+        :param date_at:
+        :return:
+        """
+        return date_at + datetime.timedelta(days=calendar.monthrange(date_at.year, date_at.month)[1])
+
+    def add_dayrate(self, month_start_at):
+        """ 加上每天的利息
+        :return:
+        """
+        for day in range(1, calendar.monthrange(month_start_at.year, month_start_at.month)[1]):
+            self.balance += self.balance * self.alipay_dayrate
+
+test = HuiXi(index=2)
+test.calculate_balance()
