@@ -3,6 +3,8 @@
 import datetime
 import calendar
 
+STATISTICS_DICT = {}
+
 class HuiXi(object):
 
     cycle = 4 # 4个月一个周期
@@ -13,56 +15,30 @@ class HuiXi(object):
     def __init__(self, index):
 
         self.date = datetime.datetime(2016,7,1)
-        self.balance = 300000
+        self.balance = 0
         self.index = index
         self.pay_accrual = 0
+        self.note= u''
+        print u'开始 用户：', self.index, self.date, u' 余额：', self.balance
+
+    def init_note(self, month_start_at):
+        self.note = u'%s 用户：%s 余额：%s' % (month_start_at, self.index, self.balance)
 
     def calculate_balance(self):
         """ 计算每一天的 余额
         :param index:
         :return:
         """
-        print
         month_start_at = self.date
-
-        print u'开始 用户：', self.index, month_start_at, u' 余额：', self.balance
-
         for month in range(1, (19 * self.cycle) + 2):
-            igpa = self.is_got_pay_accrual(month=month)
-            if igpa == 'get':
-                self.balance += self.fee_per_cycle * 19
-
-            elif igpa == 'give':
-                if self.pay_accrual == 0:
-                    self.balance -= self.fee_per_cycle
-                    self.pay_accrual = self.get_pay_accrual
-                else:
-                    self.balance -= self.fee_per_cycle + self.get_pay_accrual
-
+            self.init_note(month_start_at=month_start_at)
+            self.add_capital(month=month)
+            self.decrease_capital(month=month)
             self.date += datetime.timedelta(days=1)
-            self.add_dayrate(month_start_at=month_start_at)
-            # print month_start_at, igpa, self.balance
-            print u'开始 用户：', self.index, month_start_at, u' 动作：', igpa, u' 余额：', self.balance
             month_start_at = self.get_next_month(month_start_at)
-
-    def is_got_pay_accrual(self, month):
-        """
-        :return: got: 已经获得，get: 要获得，wait：还未获得
-        """
-
-        print month / 4,  month % 4
-
-        if ( month % 4 == 1 ):
-            return 'give'
-
-        elif ( month / 4 ) ==  (self.index - 1) and ( month % 4 == 1):
-            return 'get'
-        # elif ( month / 4 ) >=  (self.index - 1) and not ( month % 4 == 1 ):
-        #     return 'got'
-        # elif ( ( month / 4 ) >=  (self.index - 1) ) and ( month % 4 == 1 ):
-        #     return 'give'
-        else:
-            return 'wait'
+            # self.add_dayrate(month_start_at=month_start_at)
+            STATISTICS_DICT[self.index] = self.balance
+            print self.note
 
     def get_next_month(self, date_at):
         """ 获得下个月的时间
@@ -72,11 +48,46 @@ class HuiXi(object):
         return date_at + datetime.timedelta(days=calendar.monthrange(date_at.year, date_at.month)[1])
 
     def add_dayrate(self, month_start_at):
-        """ 加上每天的利息
+        """ 加上每月的利息
         :return:
         """
         for day in range(1, calendar.monthrange(month_start_at.year, month_start_at.month)[1]):
             self.balance += self.balance * self.alipay_dayrate
 
-test = HuiXi(index=2)
-test.calculate_balance()
+    def add_capital(self, month):
+        """ 获得会费
+        :return:
+        """
+        if ( month / self.cycle ) ==  (self.index - 1) and ( month % self.cycle == 1):
+            before_balance = self.balance
+            self.balance += self.fee_per_cycle * 19
+            if self.index >= 3:
+                self.balance += (self.index - 2) * 3000
+            self.note += u' 获得会费：' + str(before_balance) + ' -> ' + str(self.balance)
+
+    def decrease_capital(self, month):
+        """ 每四个月付一次会费
+        :param month:
+        :return:
+        """
+        if month % self.cycle == 1:
+            if ( month / self.cycle ) !=  (self.index - 1):
+                before_balance = self.balance
+                self.balance -= self.fee_per_cycle
+                # TODO index == 1 的时候，不用付会费还是？
+                # TODO 情况1
+                if month !=1 and self.index != 1 and ( month / self.cycle ) >= (self.index - 1):
+                    self.balance -= self.get_pay_accrual
+                # TODO 情况2
+                # if self.pay_accrual == 0:
+                #     self.balance -= self.fee_per_cycle
+                #     self.pay_accrual = self.get_pay_accrual
+                # else:
+                #     self.balance -= self.fee_per_cycle + self.get_pay_accrual
+                self.note += u' 付出会费：' + str(before_balance) + ' -> ' + str(self.balance)
+
+for i in range(1, 21):
+    test = HuiXi(index=i)
+    test.calculate_balance()
+
+print STATISTICS_DICT
