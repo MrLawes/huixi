@@ -19,7 +19,7 @@ class HuiXi(object):
         self.index = index
         self.pay_accrual = 0
         self.note= u''
-        print u'开始 用户：', self.index, self.date, u' 余额：', self.balance
+        print(u'开始 用户：', self.index, self.date, u' 余额：', self.balance)
 
     def init_note(self, month_start_at):
         self.note = u'%s 用户：%s 余额：%s' % (month_start_at, self.index, self.balance)
@@ -38,7 +38,7 @@ class HuiXi(object):
             month_start_at = self.get_next_month(month_start_at)
             # self.add_dayrate(month_start_at=month_start_at)
             STATISTICS_DICT[self.index] = self.balance
-            print self.note
+            print(self.note)
 
     def get_next_month(self, date_at):
         """ 获得下个月的时间
@@ -90,4 +90,4 @@ for i in range(1, 21):
     test = HuiXi(index=i)
     test.calculate_balance()
 
-print STATISTICS_DICT
+print(STATISTICS_DICT)
